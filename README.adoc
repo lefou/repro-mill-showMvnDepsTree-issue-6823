@@ -1,0 +1,111 @@
+# Reproduce Mill issue https://github.com/com-lihaoyi/mill/issues/6823
+:toc:
+:tocplacement: preamble
+
+## Reproduction
+
+Run `showMvnDepsTree` and notice, it never returns.
+
+```console
+> MILL_VERSION=1.1.8 mill cloud.vaadin.showMvnDepsTree
+...
+```
+
+Instead, we would expect to see a tree of all transitive dependency as output.
+
+## Debugging
+
+When started as shown above, you can attach to the JVM running class `mill.daemon.MillNoDaemonMain` with the Debugger or Profiler of your choice.
+
+
+## Thread dump
+
+A typical thead dump reveals that the process is spending its time in `coursier.core.DependencySet.$anonfun$containsModule$1(DependencySet.scala:134)` or nested.
+
+```console
+> jps
+...
+1410600 MillNoDaemonMain
+...
+
+> jstack 1410600
+2026-08-27 09:45:08
+Full thread dump OpenJDK 64-Bit Server VM (21.0.10+7-LTS mixed mode, sharing):
+
+Threads class SMR info:
+_java_thread_list=0x00007f41ac00d080, length=35, elements={
+0x00007f434002fa30, 0x00007f434014a3b0, 0x00007f434014b920, 0x00007f434014d0a0,
+0x00007f434014e6e0, 0x00007f434014fc80, 0x00007f4340151840, 0x00007f4340152f00,
+0x00007f434015f6f0, 0x00007f4340162940, 0x00007f43406da260, 0x00007f43409106c0,
+0x00007f43409114e0, 0x00007f4340945300, 0x00007f4340946880, 0x00007f43409bc590,
+0x00007f43409bdee0, 0x00007f434117afe0, 0x00007f434117c240, 0x00007f434117da60,
+0x00007f434117ebf0, 0x00007f434117fe60, 0x00007f43411810d0, 0x00007f4341182260,
+0x00007f43411833f0, 0x00007f4341670760, 0x00007f4298000f60, 0x00007f41cd02dfb0,
+0x00007f41cd08b0d0, 0x00007f41cd0cf4f0, 0x00007f41bc001760, 0x00007f41c0013640,
+0x00007f41c00162f0, 0x00007f41bc002820, 0x00007f41bc003b60
+}
+
+"main" #1 [1410602] prio=5 os_prio=0 cpu=437734,75ms elapsed=453,48s tid=0x00007f434002fa30 nid=1410602 runnable  [0x00007f4346df4000]
+   java.lang.Thread.State: RUNNABLE
+        at scala.collection.IterableOnceOps.exists(IterableOnce.scala:661)
+        at scala.collection.IterableOnceOps.exists$(IterableOnce.scala:337)
+        at scala.collection.AbstractIterable.exists(Iterable.scala:946)
+        at coursier.core.DependencySet.containsModule(DependencySet.scala:134)
+        at coursier.graph.DependencyTree$Node$$anonfun$1.applyOrElse(DependencyTree.scala:165)
+        at coursier.graph.DependencyTree$Node$$anonfun$1.applyOrElse(DependencyTree.scala:164)
+        at scala.collection.immutable.List.collect(List.scala:269)
+        at scala.collection.immutable.List.collect(List.scala:254)
+        at coursier.graph.DependencyTree$Node.children(DependencyTree.scala:164)
+        at coursier.util.Print$.$anonfun$dependencyTree0$11(Print.scala:236)
+        at coursier.util.Print$$$Lambda/0x00007f42c8b505f8.apply(Unknown Source)
+        at coursier.util.Tree.$anonfun$customRender0$3(Tree.scala:64)
+        at coursier.util.Tree.$anonfun$customRender0$3$adapted(Tree.scala:55)
+        at coursier.util.Tree$$Lambda/0x00007f42c8b51b68.apply(Unknown Source)
+        at scala.collection.IterableOnceOps.foreach(IterableOnce.scala:633)
+        at scala.collection.IterableOnceOps.foreach$(IterableOnce.scala:337)
+        at scala.collection.AbstractIterator.foreach(Iterator.scala:1328)
+        at coursier.util.Tree.recursivePrint$1(Tree.scala:55)
+        at coursier.util.Tree.$anonfun$customRender0$3(Tree.scala:63)
+        at coursier.util.Tree.$anonfun$customRender0$3$adapted(Tree.scala:55)
+        at coursier.util.Tree$$Lambda/0x00007f42c8b51b68.apply(Unknown Source)
+        at scala.collection.IterableOnceOps.foreach(IterableOnce.scala:633)
+        at scala.collection.IterableOnceOps.foreach$(IterableOnce.scala:337)
+        at scala.collection.AbstractIterator.foreach(Iterator.scala:1328)
+        at coursier.util.Tree.recursivePrint$1(Tree.scala:55)
+        at coursier.util.Tree.$anonfun$customRender0$3(Tree.scala:63)
+...
+```
+
+
+
+## Workaround (to see the desired tree)
+
+First some preparation to install thirdparty libs and the project itself into the local ivy repository.
+
+```console
+> MILL_VERSION=1.1.8 mill __:ProvisionModule.publishLocalCached
+...
+
+> mill cloud.vaadin.publishLocal --transitive true
+...
+3033] Publishing de.acme:de.acme.cmfs.cloud.vaadin:0.0.0.0002 to ivy repo /home/lefou/.ivy2/local
+```
+
+
+Now run coursier `cs` tool to show the dependency tree
+
+```console
+> cs resolve -r "https://www.myget.org/F/tabmo-public/maven/" -t de.acme:de.acme.cmfs.cloud.vaadin:0.0.0
+  Result:
+└─ de.acme:de.acme.cmfs.cloud.vaadin:0.0.0
+   ├─ aopalliance:aopalliance:1.0
+   ├─ com.fasterxml.jackson.module:jackson-module-kotlin:2.22.2
+   │  ├─ com.fasterxml.jackson.core:jackson-annotations:2.22
+   │  ├─ com.fasterxml.jackson.core:jackson-databind:2.22.2
+   │  │  ├─ com.fasterxml.jackson.core:jackson-annotations:2.22
+   │  │  └─ com.fasterxml.jackson.core:jackson-core:2.22.2
+   │  └─ org.jetbrains.kotlin:kotlin-reflect:2.1.21 -> 2.3.21 (possible incompatibility)
+   │     └─ org.jetbrains.kotlin:kotlin-stdlib:2.3.21
+   │        └─ org.jetbrains:annotations:13.0 -> 26.1.0 (possible incompatibility)
+...
+```

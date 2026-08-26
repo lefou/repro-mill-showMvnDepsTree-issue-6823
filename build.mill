@@ -1,0 +1,26 @@
+//| mill-version: 1.1.8-3-a05083
+//| mill-opts: -j0.5C
+//| mvnDeps:
+//|   # - de.tototec::de.tobiasroeser.mill.vcs.version::0.4.1
+//|   # generate OSGi manifests
+//|   - de.tototec::de.tobiasroeser.mill.osgi::0.5.0-23-004099
+//|   # used in our dependency analysis targets
+//|   - io.github.classgraph:classgraph:4.8.192
+//|   # JaCoCo Code Coverage
+//|   - de.tototec::de.tobiasroeser.mill.jacoco::0.1.0
+//|   # temp
+//|   - org.springframework.boot:spring-boot-loader-tools:3.5.16
+
+package build
+
+import mill._
+import acmebuild.*
+import mill.api.{DefaultTaskModule, ModuleRef}
+import mill.scalalib.PublishModule
+import mill.scalalib.publish.Artifact
+
+object `package` extends Module with BuildTemplate {
+
+  object buildsystem extends Module
+
+}

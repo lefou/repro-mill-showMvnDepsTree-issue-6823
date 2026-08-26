@@ -1,0 +1,232 @@
+package build.cloud
+
+import acmebuild.Deps.DepOps
+import acmebuild.*
+import acmebuild.springboot.SpringBootModule
+import mill.*
+import mill.api.{TaskCtx, PathRef}
+import mill.api.{ModuleRef}
+import mill.scalalib.*
+
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+
+import build.{app, framework, module, thirdparty}
+
+trait CloudDependencySetup extends Module { // DependencyForcer {
+}
+
+object `package` extends Module { cloud =>
+  def version: T[String] = Acme.version()
+
+  object asb extends Module {
+
+    object base extends AcmeScalaModule {
+      override def moduleDeps: Seq[PublishModule] = Seq(
+        cloud.common,
+        module.kernel
+      )
+
+      override def mvnDeps = super.mvnDeps() ++ DepSeq(
+          Deps.cats.circeDeps,
+          Deps.liHaoyi.upickleDeps,
+          Deps.liHaoyi.pprintDeps,
+          Deps.pekko.serializationJacksonDeps,
+          Deps.playJson,
+          Deps.pekko.typed.actor,
+          Deps.pekko.typed.persistence,
+          Deps.pekko.http.core,
+          Deps.pekko.actor,
+          Deps.liHaoyi.osLib,
+          Deps.pureconfig,
+          Deps.sttpClient,
+          Deps.sttpClientHttpClientBackend,
+          Deps.sttpClientAsyncHttpClientBackend,
+          Deps.asyncHttpClient,
+          Deps.netty.codec,
+          Deps.netty.`codec-http`,
+          Deps.netty.handler,
+          Deps.ulid,
+          Deps.pekko.persistenceJdbc,
+          Deps.pekko.persistenceQuery,
+          Deps.jacksonDataformatCbor
+        )
+
+      object test extends AcmeScalaTests with Scalatest {
+        override def moduleDeps: Seq[JavaModule] = super.moduleDeps ++ Seq(
+          cloud.common.testsupport,
+          cloud.common.testcontainer,
+          asb.mockserver,
+          module.kernel.test
+        )
+
+        override def mvnDeps = super.mvnDeps() ++ DepSeq(
+          Deps.pekko.typed.actorTestkit,
+          Deps.testContainersScalaTest,
+          Deps.testContainersScalaMssqlServer,
+          ///
+          Deps.logbackClassic,
+          thirdparty.mssqljdbc.asDep(),
+          Deps.pekko.typed.actor,
+          Deps.slf4j,
+          Deps.jsonPath,
+          Deps.slick,
+          Deps.slickHikaricp,
+          Deps.liHaoyi.osLib,
+          Deps.liHaoyi.ujson,
+          Deps.liHaoyi.upickle,
+          Deps.liHaoyi.pprint,
+          Deps.pekko.serializationJacksonDeps
+        )
+      }
+
+      object itest extends AcmeScalaTests with Scalatest with IntegrationTest {
+        override def moduleDeps: Seq[JavaModule] = super.moduleDeps ++ Seq(
+          cloud.common.testsupport,
+          cloud.common.testcontainer,
+          cloud.asb.mockserver
+        )
+
+        override def mvnDeps: T[Seq[Dep]] = super.mvnDeps() ++ DepSeq(
+          Deps.pekko.typed.actorTestkit,
+          Deps.testContainersScalaTest,
+          Deps.testContainersScalaMssqlServer,
+          ///
+          Deps.logbackClassic,
+          thirdparty.mssqljdbc.asDep(),
+          Deps.pekko.typed.actor,
+          Deps.slf4j,
+          Deps.jsonPath,
+          Deps.slick,
+          Deps.slickHikaricp,
+          Deps.liHaoyi.osLib,
+          Deps.liHaoyi.ujson,
+          Deps.liHaoyi.upickle,
+          Deps.liHaoyi.pprint,
+          Deps.pekko.serializationJacksonDeps
+        )
+
+        override def logbackLevels: T[Map[String, String]] = super.logbackLevels() ++ Map(
+          "org.apache.pekko.persistence.jdbc" -> "debug",
+          "org.apache.pekko.persistence.jdbc.journal" -> "debug",
+          "org.apache.pekko.serialization" -> "info",
+          "org.hibernate" -> "warn",
+          "com.zaxxer.hikari" -> "warn",
+          "de.acme" -> "debug",
+          "davinci.tools" -> "debug",
+          "org.h2" -> "debug",
+          "slick.backend.DatabaseComponent.action" -> "debug"
+        )
+      }
+    }
+
+    object mockserver extends AcmeScalaModule {
+      override def moduleDeps: Seq[PublishModule] = Seq(
+        cloud.asb.base
+      )
+      override def mvnDeps = super.mvnDeps() ++ DepSeq(
+        Deps.cmdOption,
+        Deps.sttpClient,
+        Deps.sttpClientHttpClientBackend,
+        Deps.sttpClientAsyncHttpClientBackend,
+        Deps.pekko.http.core,
+        Deps.pekko.stream
+      )
+
+      override def runMvnDeps: Task.Simple[Seq[Dep]] = super.runMvnDeps() ++ DepSeq(
+        Deps.logbackClassic
+      )
+
+      object test extends AcmeScalaTests with Scalatest with LogbackTestModule {
+
+        override def logbackLevels: T[Map[String, String]] = super.logbackLevels() ++ Map(
+          "org.apache.pekko.persistence.jdbc" -> "debug",
+          "org.apache.pekko.persistence.jdbc.journal" -> "debug",
+          "org.apache.pekko.serialization" -> "info",
+          "com.zaxxer.hikari" -> "warn",
+          "de.acme" -> "debug",
+          "org.h2" -> "debug",
+          "davinci" -> "debug",
+          "slick.backend.DatabaseComponent.action" -> "debug",
+          "de.acme.richmodel.introspector.handle.impl.SimpleObjectHandle" -> "INFO"
+        )
+      }
+    }
+
+    object replayserver extends AcmeKotlinModule {
+      override def mvnDeps = super.mvnDeps() ++ DepSeq(
+          Deps.slf4j,
+          Deps.jansi,
+          Deps.ktor.allHttpServerDeps
+        )
+    }
+  }
+
+  object common extends AcmeScalaModule {
+    override def mvnDeps = super.mvnDeps() ++ DepSeq(
+      Deps.slf4j,
+      Deps.scalaReflect,
+      Deps.slick
+    )
+
+    object testsupport extends AcmeScalaModule {
+      override def mvnDeps = super.mvnDeps() ++ DepSeq(
+        Deps.slf4j,
+        Deps.scalatest,
+        Deps.scalatestPlusScalaCheck,
+        Deps.typesafeConfig,
+        Deps.pekko.typed.actor
+      )
+      override def moduleDeps: Seq[PublishModule] = Seq(
+        cloud.common
+      )
+    }
+
+    /** Support for containerized tests */
+    object testcontainer extends AcmeScalaModule {
+      override def moduleDeps: Seq[PublishModule] = Seq(common)
+      override def mvnDeps: T[Seq[Dep]] = super.mvnDeps() ++ DepSeq(
+        Deps.slf4j,
+        Deps.testContainersScalaMssqlServer,
+        Deps.liHaoyi.osLib
+      )
+    }
+  }
+
+  object console extends AcmeScalaModule with CloudDependencySetup {
+    override def moduleDeps: Seq[PublishModule] = Seq(framework.utils)
+    override def mvnDeps: Task.Simple[Seq[Dep]] = super.mvnDeps() ++ DepSeq(
+      Deps.liHaoyi.ammonite_withoutJline,
+      Deps.auth0Jwt,
+      Deps.pekko.http.core,
+      Deps.pekko.http.sprayJson,
+      Deps.pekko.connectors.file,
+      Deps.pekko.http.cors,
+      Deps.pekko.typed.actor,
+      Deps.pekko.typed.stream,
+      Deps.logbackClassic,
+      Deps.cmdOption,
+      Deps.oshiCore,
+      Deps.slf4j,
+      Deps.ulid,
+      Deps.pekko.serializationJacksonDeps
+    )
+
+    override def runMvnDeps = super.runMvnDeps() ++ DepSeq(
+      Deps.logbackClassic
+    )
+
+    override def resources = super.resources()
+
+    object test extends AcmeScalaTests with Scalatest {
+      override def mvnDeps: Task.Simple[Seq[Dep]] = super.mvnDeps() ++ DepSeq(
+        Deps.pekko.streamTestKit,
+        Deps.pekko.http.testkit,
+        Deps.pekko.typed.actorTestkit
+      )
+      override def runMvnDeps = DepSeq(
+        Deps.logbackClassic
+      )
+    }
+  }
+}

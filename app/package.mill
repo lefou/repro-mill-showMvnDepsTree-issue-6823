@@ -1,0 +1,257 @@
+package build.app
+
+import acmebuild._
+import acmebuild.eclipse.{EclipseBundles => ED}
+import de.tobiasroeser.mill.osgi.OsgiHeaders
+import mill.{T}
+import mill.api.*
+import mill.scalalib.{BoundDep, Dep, JavaModule, PublishModule, DepSyntax, ScalaModule}
+import mill.util.Jvm
+
+import build.{app, cloud, framework, module, thirdparty}
+
+object `package` extends Module { app =>
+
+  object branding extends AcmeModule {
+    override def artifactName: T[String] = "de.acme.cmfs.budget.budget_branding"
+    override def moduleDeps = Seq(
+      framework.uiJfaceBranding
+    )
+  }
+
+  object dbschema extends AcmeModule {
+    override def moduleDeps = Seq(
+      framework.coreApi,
+      framework.security,
+      framework.domainmodelApi,
+      framework.values,
+      module.kernel,
+      framework.dbschemaAnnotation,
+      framework.workflow,
+      framework.fixtureV2,
+      app.i18n
+    )
+    override def mvnDeps = super.mvnDeps() ++ DepSeq(
+      Deps.slf4j,
+      Deps.guava_noJsr305,
+      Deps.guavaFailureAccess,
+      Deps.jakartaPersistenceApi,
+      // protobuf
+      Deps.protobufJava,
+      Deps.protobufSunMisc,
+      // spring
+      Deps.spring.core,
+      Deps.spring.orm,
+      Deps.tototecUtilsFunctional,
+      Deps.nvI18nCountryCodes,
+      Deps.hibernate._all()
+    )
+    override def runMvnDeps = super.runMvnDeps() ++ DepSeq(
+      Deps.jclOverSlf4j,
+      Deps.commonsCollections,
+      Deps.jodatime,
+      //        Deps.jodatimeHibernate,
+      Deps.logbackCore,
+      Deps.logbackClassic
+    )
+    def dbSchemaResources = Task.Sources(moduleDir / "exec-resources")
+    override def defaultTask(): String = "dbschema"
+    def dbschema() = Task.Command {
+      val dest = Task.ctx().dest
+      val schemaDir = dest / "schema"
+      val dbSchema = ("de.acme.cmfs.dbschema.tools.MavenSchemaRunner")
+      val logbackConfigArgs: Option[String] = dbSchemaResources().headOption
+        .map(p => s"-Dlogback.counfigurationFile=${(p.path / "logback.xml").toIO.getPath()}")
+      Jvm.callProcess(
+        mainClass = dbSchema,
+        classPath = runClasspath().map(_.path),
+        jvmArgs = forkArgs() ++ logbackConfigArgs,
+        mainArgs = Seq(schemaDir.toIO.getPath()),
+        cwd = moduleDir
+      )
+      ()
+    }
+    object test extends AcmeModuleTests with TestNg
+  }
+
+  /**
+   * I18n Support.
+   * There is also an OSGi extension module [[app.i18n_extension]].
+   */
+  object i18n extends AcmeModule {
+    override def description = "I18n Support"
+    override def mvnDeps = Task {
+      super.mvnDeps() ++ DepSeq(
+        Deps.slf4j,
+        thirdparty.po4j.asDep()
+      )
+    }
+  }
+
+  /**
+   * Same as [[app.i18n]] but build as extension, embedding it's dependencies.
+   * Not suitable for non-osgi classpaths.
+   */
+  object i18n_extension extends AcmeOsgiModule {
+    override def artifactName: T[String] = "de.acme.cmfs.i18n_extension"
+    override def description = "Simple OSGi Extension for Central Internationalization (I18n) Support"
+    override def compileModuleDeps = Seq(
+      // we embed this
+      app.i18n
+    )
+    override def compileMvnDeps = DepSeq(
+      Deps.slf4j,
+      thirdparty.po4j.asDep()
+    )
+    override def osgiHeaders: T[OsgiHeaders] = Task {
+      super
+        .osgiHeaders()
+        .copy(
+          `Fragment-Host` = Some("system.bundle;extension:=framework"),
+          `Export-Package` = Seq(
+            "de.acme.framework.i18n"
+          ),
+          `Import-Package` = Seq(""),
+          `Conditional-Package` = Seq(
+            "de.acme.cmfs.i18n_extention",
+            "antlr.*",
+            "dev.tlmtech.po4j.*",
+          )
+        )
+    }
+    object test extends AcmeModuleTests with TestNg {
+      override def compileModuleDeps = super.compileModuleDeps ++ Seq(app.i18n)
+      override def mvnDeps = super.mvnDeps() ++ i18n.compileMvnDeps()
+    }
+  }
+
+  object headless extends AcmeOsgiModule {
+    override def artifactName = "de.acme.cmfs.headless"
+    override def moduleDeps = Seq(
+      framework.coreApi,
+      framework.security,
+      framework.workflow,
+      framework.dbschemaAnnotation,
+      framework.fixtureV2,
+      app.i18n,
+      framework.utils,
+      framework.values,
+      framework.domainmodelApi,
+      framework.metamodelApi,
+      framework.introspector,
+      framework.uiJface,
+      framework.uiBinding,
+      framework.uiBindingRcp,
+      module.kernel,
+      app.branding,
+      framework.osgiTest,
+      framework.pojosr
+    )
+    override def mvnDeps = Task {
+      DepSeq(
+        super.mvnDeps(),
+        Deps.slf4j,
+        Deps.jclOverSlf4j,
+        Deps.log4jApi,
+        Deps.log4jToSlf4j,
+        Deps.log4jOverSlf4j,
+        ED.`org.eclipse.core.filesystem.macosx`,
+        ED.`org.eclipse.equinox.security.macosx`,
+        ED.`org.eclipse.core.filesystem`,
+        ED.`org.eclipse.core.commands`,
+        ED.`org.eclipse.core.contenttype`,
+        ED.`org.eclipse.core.databinding.beans`,
+        ED.`org.eclipse.core.databinding.observable`,
+        ED.`org.eclipse.core.databinding.property`,
+        ED.`org.eclipse.core.databinding`,
+        ED.`org.eclipse.core.expressions`,
+        ED.`org.eclipse.core.jobs`,
+        ED.`org.eclipse.core.runtime`,
+        ED.`org.eclipse.osgi`,
+        ED.`org.eclipse.equinox.app`,
+        ED.`org.eclipse.equinox.common`,
+        ED.`org.eclipse.equinox.launcher`,
+        ED.`org.eclipse.equinox.preferences`,
+        ED.`org.eclipse.equinox.registry`,
+        ED.`org.eclipse.equinox.security`,
+        ED.`org.eclipse.rcp`,
+        ED.`org.eclipse.help`,
+        ED.`com.ibm.icu`,
+        Deps.gson,
+        Deps.guava_noJsr305,
+        Deps.guavaFailureAccess,
+        Deps.jodatime,
+        Deps.spring.core,
+        Deps.spring.beans,
+        Deps.spring.context,
+        Deps.spring.orm,
+        Deps.spring.jdbc,
+        Deps.spring.tx,
+        Deps.jakartaPersistenceApi,
+        Deps.dominoJava,
+        Deps.tototecUtilsFunctional,
+        //          Deps.felixConnect,
+        Deps.osgiCore,
+        Deps.hibernate._all()
+      )
+        .map(_.exclude(
+          "org.eclipse.ui" -> "workbench",
+          "org.eclipse.core" -> "expressions",
+          "org.eclipse" -> "jface"
+        ))
+    }
+    override def compileMvnDeps = DepSeq(
+      Deps.osgiCompendium
+    )
+    override def osgiHeaders: T[OsgiHeaders] = Task {
+      super
+        .osgiHeaders()
+        .copy(
+          `Bundle-SymbolicName` = s"${bundleSymbolicName()};singleton:=true",
+          `Bundle-Activator` = Some(s"${artifactName()}.internal.HeadlessActivator"),
+          `Export-Package` = Seq(
+            s"${artifactName()}.application"
+          )
+        )
+    }
+  }
+
+  /**
+   * A OSGi bundle containing the whole Acme Kernel with all it's dependencies.
+   * Configuration needs to be provided by a fragments.
+   */
+  object rcpBundle extends AcmeModule {
+    override def moduleDeps: Seq[PublishModule] = Seq(
+      module.kernel,
+      framework.coreApi,
+      framework.security,
+      framework.domainmodelApi,
+      framework.introspector,
+      framework.metamodelApi,
+      framework.values,
+      framework.dbschemaAnnotation,
+      framework.etlApi,
+      framework.poi,
+      framework.utils,
+      framework.workflow,
+      framework.fixtureV2,
+      framework.uiBinding,
+      framework.uiBindingRcp,
+      framework.rmfApp,
+      app.branding
+    )
+
+    override def mvnDeps = DepSeq(
+      Deps.jakartaActivationApi,
+      Deps.javaxCdiApi,
+      Deps.javaxEl,
+      Deps.javaxInject,
+      Deps.javaxInterceptorApi,
+      Deps.jakartaTransactionApi,
+      ED.`org.eclipse.swt`,
+      Deps.springNonOsgi._all(),
+      Deps.hibernate._all(),
+      Deps._ehcache()
+    )
+  }
+}

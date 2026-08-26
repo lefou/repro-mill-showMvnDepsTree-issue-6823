@@ -1,0 +1,307 @@
+package build.cloud.vaadin
+
+import acmebuild.Deps.DepOps
+import acmebuild.*
+import acmebuild.springboot.SpringBootModule
+import coursier.version.VersionConstraint
+import mill.*
+import mill.api.{ModuleRef, PathRef, TaskCtx}
+import mill.javalib.publish.License
+
+import scala.util.Try
+import mill.scalalib.*
+
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+
+import build_.cloud.CloudDependencySetup
+import build.{app, cloud, framework, module, thirdparty}
+import coursier.core.MinimizedExclusions
+
+// cloud.vaadin
+object `package` extends Module,
+  AcmeKotlinModule,
+  CloudDependencySetup {  vaadinBaseModule =>
+  override def moduleDeps = Seq(
+    asbBaseForCloud,
+    asbMockserverForCloud,
+    asbReplayserverForCloud,
+    framework.equinoxupdate.equinoxupdate,
+    rmfAppForCloud,
+    kernelForCloud,
+    app.i18n,
+    app.i18n_extension,
+    rcpBundleForCloud,
+    contractmngAppForCloud
+  )
+
+  // Maven compatible source layout to also compile with gradle
+  override def sources: T[Seq[PathRef]] = Task.Sources(moduleDir / "src" / "main" / "java")
+
+  override def resources: T[Seq[PathRef]] = Task.Sources(moduleDir / "src" / "main" / "resources")
+
+  override def compileMvnDeps = DepSeq(
+    Deps.osgiCore
+  )
+
+  override def bomMvnDeps = DepSeq(
+    Deps.vaadin.vaadinBom
+  )
+
+  override def mvnDeps = DepSeq(
+    Deps.kotlin.stdlibCommon,
+    Deps.kotlin.stdlib,
+    Deps.kotlin.stdlibJdk8,
+    Deps.kotlin.stdlibJdk7,
+    Deps.kotlin.annotations,
+    Deps.kotlin.serializationCore,
+    Deps.kotlin.serializationJson,
+    Deps.kotlin.coroutines,
+    Deps.kotlin.coroutinesJdk8,
+    Deps.kotlin.reflect,
+    Deps.kotlin.dataFrame,
+    Deps.kotlin.dataFrameExcel,
+    Deps.kotlin.dataFrameAnnoProc,
+    // transitive deps of arrow/dataframe
+    Deps.netty.common,
+    Deps.kotlinArrow.core,
+    Deps.kotlinArrow.coroutines,
+    Deps.kotlinx.htmlJvm,
+    Deps.caffeine,
+    Deps.commonsCodec,
+    Deps.commonsFileupload,
+    Deps.commonsIo,
+    Deps.jclOverSlf4j,
+    Deps.javaxValidationApi,
+    Deps.jacksonKotlin,
+    Deps.byteBuddy,
+    Deps.commonsCompress,
+    Deps.commonsLang3,
+    Deps.httpclient,
+    Deps.httpcore,
+    Deps.jsoup,
+    Deps.felixGogoShell,
+    Deps.felixGogoCommand,
+    Deps.felixGogoRuntime,
+    Deps.felixMetatype,
+    Deps.felixConfigadmin,
+    Deps.felixScr,
+    Deps.ulid,
+    Deps.vaadin.vaadinConfirmDialogFlow,
+    Deps.vaadin.vaadinChartsFlow,
+    Deps.vaadin.vaadinBoardFlow,
+    Deps.vaadin.vaadinCore,
+//    Deps.vaadinToggle,
+    Deps.springBoot.starterWeb,
+    Deps.vaadin.vaadinSpringBootStarter,
+    Deps.springBoot.starterCache,
+    // This is a scala dependency
+    Deps.jacksonScala.nonScalaDep,
+    Deps.jsonPath,
+    // transitive dependency of vaadin-flow-server
+    Deps.phCommons_c,
+    // This is a scala dependency
+    Deps.pekko.actor.nonScalaDep,
+    Deps.log4jdbc,
+    Deps.logstashLockbackEncoder,
+    Deps.spring.web(),
+    Deps.springSecurityWeb,
+    Deps.springSecurityConfig,
+    Deps.springBoot.starterOauth2Client,
+    Deps.vaadin.flowServer,
+    Deps.vaadin.vaadinDev_,
+    Deps.mail.mailDeps,
+    Deps.kotlinExposed.all,
+    Deps.ktor.allHttpServerDeps,
+    mvnDepsManagement
+  )
+
+  // force some transitive versions
+  def mvnDepsManagement = DepSeq(
+    // used by vaadin flow server
+    // Deps.swaggerCodegenV3,
+//    Deps.rhino,
+    // used by swagger
+    Deps.slf4jExt,
+    //        Deps.tomcatEmbedCore,
+    Deps.jsonSmart_c
+  )
+
+  override def runMvnDeps = super.runMvnDeps() ++ DepSeq(
+    //          Deps.vaadin.vaadinCoreFlowDeps ++
+    //          Deps.vaadin.vaadinControlDeps
+    Deps.vaadin.vaadinSpring,
+    Deps.springRuntime._all(),
+    Deps._ehcache(),
+    Deps.felixGogoCommand,
+    Deps.felixGogoRuntime,
+    Deps.felixMetatype,
+    Deps.felixScr,
+    Deps.felixConfigadmin,
+    Deps.aopalliance,
+    Deps.protobufJava,
+    Deps.commonsDbcp,
+    Deps.jakartaTransactionApi,
+    thirdparty.mssqljdbc.asDep(),
+    Deps.spring.expression,
+    Deps.asm9,
+    Deps.asm9Commons,
+    Deps.guava,
+    Deps.springRuntime.webmvc,
+    Deps.kotlin.serializationCore,
+    Deps.kotlin.serializationJson,
+    Deps.kotlin.stdlib,
+    Deps.kotlin.reflect
+  )
+
+  override def forkWorkingDir: T[os.Path] = moduleDir
+
+  override def mainClass: T[Option[String]] = Some("davinci.tools.vaadin.App")
+
+  trait vaadinTests extends AcmeKotlinModule with AcmeModuleTests {
+    override def sources = Task.Sources("src")
+    override def moduleDeps: Seq[PublishModule] = super.moduleDeps.collect {
+      case m: PublishModule => m
+      case m => sys.error(s"Non-publishable moduleDeps: ${m}")
+    } ++ Seq(
+      cloud.common.testcontainer,
+      cloud.common.testsupport
+    )
+
+    override def mvnDeps: T[Seq[Dep]] = super.mvnDeps() ++ DepSeq(
+      Deps.karibuTesting,
+      Deps.dynatestEngine,
+      Deps.dynatestApi,
+      Deps.junitJupiter,
+      Deps.kotlin.coroutinesTest,
+      Deps.reflections,
+      Deps.lambdatest,
+      Deps.strikt,
+      Deps.striktJackson,
+      Deps.springBoot.starterTest,
+      Deps.mockitoKotlin,
+      Deps.mockk,
+      Deps.testContainers,
+      Deps.testContainersJunit5,
+      Deps.testContainersMsSqlServer,
+      thirdparty.mssqljdbc.asDep()
+    )
+
+    // fix compile issue due to multi-trait inheritance
+    override def jvmId = super.jvmId()
+  }
+
+  object test extends vaadinTests with Junit5 with CloudDependencySetup
+
+  object itest extends vaadinTests with Junit5 with CloudDependencySetup with IntegrationTest {
+    override def moduleDeps: Seq[PublishModule] = super.moduleDeps ++ Seq(
+      vaadinBaseModule.test
+    )
+
+    /**
+     * Run all itest classes in a single JVM.
+     *
+     * With the inherited `testParallelism = true`, Mill forks one worker JVM per test class. Every
+     * one of them then starts its own SQL Server test container -- measured: four fixpoint classes
+     * produced four workers ([<id>-0] .. [<id>-3]) and four containers. That defeats the shared
+     * container the contract fixpoint suite is built on and puts four SQL Server instances on the
+     * machine at once.
+     */
+    override def testParallelism = false
+  }
+
+  object testbenchDocker
+      extends AcmeKotlinTests
+      with Junit5
+      with LogbackTestModule
+      with SmokeTest {
+    override def moduleDeps = Seq()
+
+    override def mvnDeps = super.mvnDeps() ++ DepSeq(
+      Deps.vaadin.testcontainersJunit5,
+      Deps.vaadin.testcontainersMsSqlServer,
+      Deps.vaadin.playwright,
+      Deps.strikt,
+      Deps.striktJackson,
+      Deps.slf4j,
+      Deps.logbackClassic,
+      thirdparty.mssqljdbc.asDep(),
+      Deps.kotlin.coroutinesTest,
+      Deps.kotlin.coroutinesJdk8,
+      Deps.ktor.allHttpClientDeps
+    )
+
+    override def runMvnDeps: T[Seq[Dep]] = super.runMvnDeps() ++ DepSeq(
+      // required by testbench
+      Deps.saxon8Dom
+    )
+
+  }
+
+  /**
+   * Intermediate module to add some exclusions to the transitive dependency resolution.
+   */
+  trait ExclusionsForCloud extends AcmeModule {
+    private val transitiveExcludes = {
+      val eclipse = "de.acme.thirdparty.eclipse"
+      Set(
+        // Should not be needed, but veracode isn't happy due to CVEs
+        eclipse -> "org.eclipse.core.runtime",
+        eclipse -> "org.eclipse.jface",
+        eclipse -> "org.eclipse.ui.forms",
+        eclipse -> "org.eclipse.ui.workbench",
+        // More Eclispe stuff
+        eclipse -> "org.eclipse.jface.databinding",
+        eclipse -> "org.eclipse.core.commands",
+        eclipse -> "org.eclipse.core.contenttype",
+        eclipse -> "org.eclipse.core.databinding",
+        eclipse -> "org.eclipse.core.databinding.beans",
+        eclipse -> "org.eclipse.core.databinding.property",
+        eclipse -> "org.eclipse.core.databinding.observable",
+        eclipse -> "org.eclipse.core.expressions",
+        eclipse -> "org.eclipse.core.filesystem",
+        eclipse -> "org.eclipse.core.jobs",
+        eclipse -> "org.eclipse.core.property",
+        eclipse -> "org.eclipse.equinox.app",
+        eclipse -> "org.eclipse.equinox.common",
+        eclipse -> "org.eclipse.equinox.launcher",
+        eclipse -> "org.eclipse.equinox.preferences",
+        eclipse -> "org.eclipse.equinox.registry",
+        eclipse -> "org.eclipse.equinox.security",
+        eclipse -> "org.eclipse.help",
+        eclipse -> "org.eclipse.osgi",
+        eclipse -> "org.eclipse.rcp",
+        eclipse -> "org.eclipse.swt",
+        eclipse -> "org.eclipse.ui",
+        eclipse -> "org.eclipse.osgi"
+      )
+    }
+    override def coursierDependencyTask = Task.Anon {
+      val excludes = transitiveExcludes
+        .map(ex => (coursier.core.Organization(ex._1), coursier.core.ModuleName(ex._2)))
+      val sup = super.coursierDependencyTask()
+      sup.withMinimizedExclusions(sup.minimizedExclusions.join(MinimizedExclusions(excludes)))
+    }
+  }
+  object kernelForCloud extends ExclusionsForCloud {
+    override def moduleDeps = Seq(module.kernel)
+  }
+  object contractmngAppForCloud extends ExclusionsForCloud {
+//    override def moduleDeps = Seq(app.contractmngApp)
+  }
+  object rmfAppForCloud extends ExclusionsForCloud {
+    override def moduleDeps = Seq(framework.rmfApp)
+  }
+  object rcpBundleForCloud extends ExclusionsForCloud {
+    override def moduleDeps = Seq(app.rcpBundle)
+  }
+  object asbBaseForCloud extends ExclusionsForCloud {
+    override def moduleDeps = Seq(cloud.asb.base)
+  }
+  object asbMockserverForCloud extends ExclusionsForCloud {
+    override def moduleDeps = Seq(cloud.asb.mockserver)
+  }
+  object asbReplayserverForCloud extends ExclusionsForCloud {
+    override def moduleDeps = Seq(cloud.asb.replayserver)
+  }
+}

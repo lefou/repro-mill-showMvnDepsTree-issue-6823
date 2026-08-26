@@ -1,0 +1,145 @@
+package build.module
+
+import acmebuild.*
+import acmebuild.eclipse.{EclipseBundles => ED}
+import mill.{Module, T, Task}
+import mill.api.PathRef
+import mill.api.Module
+import mill.scalalib.{Dep, JavaModule, ScalaModule}
+
+import build_.package_.{app, cloud, framework, thirdparty}
+
+object `package` extends Module { module =>
+
+  object kernel extends AcmeModule with AcmeKotlinModule with ProtocModule with IdeaJpaModule {
+    override def artifactName = "de.acme.cmfs.kernel"
+    override def compileModuleDeps: Seq[JavaModule] = Seq(app.i18n)
+    override def protocSources = Task.Sources(moduleDir / "protobuf")
+    override def protocVersion: T[String] = Deps.protobufJava.version
+    override def moduleDeps = Seq(
+      framework.coreApi,
+      framework.security,
+      framework.fixtureV2,
+      framework.utils,
+      framework.workflow,
+      framework.poi,
+      framework.dbschemaAnnotation,
+      framework.domainmodelApi,
+      framework.values,
+      framework.osgi
+    )
+    override def mvnDeps = super.mvnDeps() ++ DepSeq(
+      ED.`org.eclipse.core.runtime`,
+      ED.`org.eclipse.equinox.common`,
+      Deps.jakartaPersistenceApi,
+      Deps.dominoJava,
+      Deps.nvI18nCountryCodes,
+      Deps.commonsDbcp,
+      Deps.hikariCp,
+      Deps.slf4j,
+      Deps.jodatime,
+      Deps.poiOoxml,
+//      Deps.supercsv,
+      Deps.guava_noJsr305,
+      Deps.tototecUtilsFunctional,
+      Deps.aopalliance,
+      // used by document services
+      Deps.tikaCore,
+      // used by budgetvariance
+      Deps.gson,
+      Deps.guava_noJsr305,
+      Deps.javaxAnnotationApi,
+      // used by contract
+      Deps.protobufJava,
+      Deps.protobufSunMisc
+    ) ++
+      Deps.spring._all() ++
+      Deps.hibernate._all() ++
+      Deps._ehcache()
+    override def compileMvnDeps: T[Seq[Dep]] = super.compileMvnDeps() ++ DepSeq(
+      ED.`org.eclipse.osgi`,
+      // used by budgetvariance
+      Deps.immutables
+    )
+
+    object testsupport extends AcmeModule {
+      override def moduleDeps = super.moduleDeps ++ Seq(
+        kernel
+      )
+      override def mvnDeps = super.mvnDeps() ++ DepSeq(
+        Deps.slf4j,
+        Deps.julToSlf4j,
+        Deps.logbackClassic,
+        Deps.logbackCore,
+        Deps.jakartaPersistenceApi,
+        Deps.lambdatest,
+        Deps.tototecUtilsFunctional,
+        Deps.testng,
+        Deps.easymock,
+        Deps.assertJ,
+        Deps.hamcrestAll,
+        Deps.h2
+      )
+    }
+
+    object test extends AcmeModuleTests with TestNg {
+      override def mvnDeps = super.mvnDeps() ++ DepSeq(
+        Deps._ehcache(),
+        Deps.hibernate._all(),
+        Deps.cglib,
+        Deps.spring.expression,
+        Deps.testng,
+        Deps.easymock,
+        Deps.powermockModuleTestng,
+        Deps.powermockApiEasymock,
+        Deps.cglibNodep,
+        Deps.objenesis,
+        Deps.log4jApi,
+        Deps.log4jToSlf4j,
+        Deps.log4jOverSlf4j,
+        Deps.lambdatest,
+        Deps.h2,
+        Deps.commonsCollections,
+        Deps.jakartaTransactionApi,
+        Deps.jclOverSlf4j,
+        Deps.commonsPool,
+        ED.`org.eclipse.osgi`,
+        Deps.assertJ,
+        Deps.assertJGuava,
+        Deps.assertJJodaTime
+      )
+      override def moduleDeps = super.moduleDeps ++ Seq(
+        testsupport,
+        framework.osgiPojosr,
+        framework.osgi,
+        framework.domainmodelApi.test
+      )
+      override def runClasspath: T[Seq[PathRef]] = Task {
+        super
+          .runClasspath()
+          .filter(pr => !pr.path.last.startsWith("org.eclipse.osgi-"))
+//        ++
+          // some deps we need for JCache/Ehcache
+//          app.mono.resolvedExtraAggMvnDeps()
+      }
+    }
+    object stest extends AcmeModuleTests with ScalaModule with Scalatest with IntegrationTest {
+      override def scalaVersion: T[String] = Deps.scalaVersion
+      override def moduleDeps = Seq(
+        app.i18n_extension,
+        module.kernel.testsupport,
+        app.headless,
+        cloud.common.testcontainer,
+        cloud.common.testsupport,
+        cloud.asb.base.test
+      )
+      override def mvnDeps = super.mvnDeps() ++ DepSeq(
+        Deps.testContainersScalaTest,
+        Deps.commonsDbcp2,
+        Deps.assertJDb,
+        thirdparty.mssqljdbc.asDep()
+      )
+    }
+  }
+
+}
