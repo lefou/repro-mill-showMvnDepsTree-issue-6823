@@ -7,11 +7,11 @@
 Run `showMvnDepsTree` and notice, it never returns.
 
 ```console
-> MILL_VERSION=1.1.8 mill cloud.vaadin.showMvnDepsTree
+> MILL_VERSION=1.1.8 mill -i cloud.vaadin.showMvnDepsTree
 ...
 ```
 
-Instead, we would expect to see a tree of all transitive dependency as output.
+Instead, we would expect to see a tree of all transitive dependencies as output.
 
 ## Debugging
 
