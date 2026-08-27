@@ -15,7 +15,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 import build_.cloud.CloudDependencySetup
-import build.{app, cloud, framework, module, thirdparty}
+import build.{app, cloud, framework, module}
 import coursier.core.MinimizedExclusions
 
 // cloud.vaadin

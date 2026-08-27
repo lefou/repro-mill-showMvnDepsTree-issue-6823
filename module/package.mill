@@ -6,7 +6,7 @@ import mill.api.PathRef
 import mill.api.Module
 import mill.scalalib.{Dep, JavaModule, ScalaModule}
 
-import build_.package_.{app, cloud, framework, thirdparty}
+import build_.package_.{app, cloud, framework}
 
 object `package` extends Module { module =>
 

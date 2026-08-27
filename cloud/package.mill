@@ -11,7 +11,7 @@ import mill.scalalib.*
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-import build.{app, framework, module, thirdparty}
+import build.{app, framework, module}
 
 trait CloudDependencySetup extends Module { // DependencyForcer {
 }

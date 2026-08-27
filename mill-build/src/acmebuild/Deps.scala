@@ -2,15 +2,9 @@ package acmebuild
 
 import mill._
 import mill.scalalib._
-import acmebuild.eclipse.Archives
-
-import build_.package_.thirdparty
 
 //noinspection TypeAnnotation,RedundantBlock,SpellCheckingInspection
 trait Deps {
-
-  // Some Eclipse archived bundle download magic
-//  import Archives._
 
   lazy val logbackVersion = "1.6.3"
   lazy val logstashLogbackEncoderVersion = "8.1"
@@ -179,7 +173,6 @@ trait Deps {
   lazy val _ehcache = Task.Anon {
     Seq(
       ehcache.exclude("org.glassfish.jaxb" -> "jaxb-runtime"),
-//      thirdparty.jakartaXmlBind2.asDep()
     )
   }
   val equinoxGogoAdapter = mvn"org.knowhowlab.osgi.experiments.gogo:equinox-gogo-adapter:1.0.0"

@@ -80,17 +80,13 @@ _java_thread_list=0x00007f41ac00d080, length=35, elements={
 
 ## Workaround (to see the desired tree)
 
-First some preparation to install thirdparty libs and the project itself into the local ivy repository.
+First install the project itself into the local ivy repository.
 
 ```console
-> MILL_VERSION=1.1.8 mill __:ProvisionModule.publishLocalCached
-...
-
-> mill cloud.vaadin.publishLocal --transitive true
+> MILL_VERSION=1.1.8 mill cloud.vaadin.publishLocal --transitive true
 ...
 3033] Publishing de.acme:de.acme.cmfs.cloud.vaadin:0.0.0 to ivy repo /home/lefou/.ivy2/local
 ```
-
 
 Now run coursier `cs` tool to show the dependency tree
 

@@ -7,7 +7,7 @@ import mill.api.*
 import mill.scalalib.{BoundDep, Dep, JavaModule, PublishModule, DepSyntax, ScalaModule}
 import mill.util.Jvm
 
-import build.{app, cloud, framework, module, thirdparty}
+import build.{app, cloud, framework, module}
 
 object `package` extends Module { app =>
 

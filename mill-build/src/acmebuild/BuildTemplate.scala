@@ -6,7 +6,7 @@ import mill.{Module, T, Task}
 
 import scala.util.control.NonFatal
 import scala.util.matching.Regex
-import build_.package_.{app, buildsystem, cloud, framework, module, thirdparty}
+import build_.package_.{app, buildsystem, cloud, framework, module}
 import mill.util.Tasks
 
 trait BuildTemplate extends Module {
