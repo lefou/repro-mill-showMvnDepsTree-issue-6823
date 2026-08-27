@@ -88,7 +88,7 @@ First some preparation to install thirdparty libs and the project itself into th
 
 > mill cloud.vaadin.publishLocal --transitive true
 ...
-3033] Publishing de.acme:de.acme.cmfs.cloud.vaadin:0.0.0.0002 to ivy repo /home/lefou/.ivy2/local
+3033] Publishing de.acme:de.acme.cmfs.cloud.vaadin:0.0.0 to ivy repo /home/lefou/.ivy2/local
 ```
 
 
