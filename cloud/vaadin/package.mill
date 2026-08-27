@@ -102,7 +102,6 @@ object `package` extends Module,
     Deps.phCommons_c,
     // This is a scala dependency
     Deps.pekko.actor.nonScalaDep,
-    Deps.log4jdbc,
     Deps.logstashLockbackEncoder,
     Deps.spring.web(),
     Deps.springSecurityWeb,

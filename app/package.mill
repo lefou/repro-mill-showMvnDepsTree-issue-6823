@@ -1,7 +1,6 @@
 package build.app
 
 import acmebuild._
-import acmebuild.eclipse.{EclipseBundles => ED}
 import de.tobiasroeser.mill.osgi.OsgiHeaders
 import mill.{T}
 import mill.api.*
@@ -155,28 +154,6 @@ object `package` extends Module { app =>
         Deps.log4jApi,
         Deps.log4jToSlf4j,
         Deps.log4jOverSlf4j,
-        ED.`org.eclipse.core.filesystem.macosx`,
-        ED.`org.eclipse.equinox.security.macosx`,
-        ED.`org.eclipse.core.filesystem`,
-        ED.`org.eclipse.core.commands`,
-        ED.`org.eclipse.core.contenttype`,
-        ED.`org.eclipse.core.databinding.beans`,
-        ED.`org.eclipse.core.databinding.observable`,
-        ED.`org.eclipse.core.databinding.property`,
-        ED.`org.eclipse.core.databinding`,
-        ED.`org.eclipse.core.expressions`,
-        ED.`org.eclipse.core.jobs`,
-        ED.`org.eclipse.core.runtime`,
-        ED.`org.eclipse.osgi`,
-        ED.`org.eclipse.equinox.app`,
-        ED.`org.eclipse.equinox.common`,
-        ED.`org.eclipse.equinox.launcher`,
-        ED.`org.eclipse.equinox.preferences`,
-        ED.`org.eclipse.equinox.registry`,
-        ED.`org.eclipse.equinox.security`,
-        ED.`org.eclipse.rcp`,
-        ED.`org.eclipse.help`,
-        ED.`com.ibm.icu`,
         Deps.gson,
         Deps.guava_noJsr305,
         Deps.guavaFailureAccess,
@@ -248,7 +225,6 @@ object `package` extends Module { app =>
       Deps.javaxInject,
       Deps.javaxInterceptorApi,
       Deps.jakartaTransactionApi,
-      ED.`org.eclipse.swt`,
       Deps.springNonOsgi._all(),
       Deps.hibernate._all(),
       Deps._ehcache()

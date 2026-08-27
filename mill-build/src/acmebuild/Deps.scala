@@ -10,7 +10,7 @@ import build_.package_.thirdparty
 trait Deps {
 
   // Some Eclipse archived bundle download magic
-  import Archives._
+//  import Archives._
 
   lazy val logbackVersion = "1.6.3"
   lazy val logstashLogbackEncoderVersion = "8.1"
@@ -18,7 +18,6 @@ trait Deps {
   lazy val slf4jVersion = "2.0.18"
   val scalaVersion = "2.13.18"
   def scalaBinVersion = scalaVersion.split("[.]").take(2).mkString(".")
-  val swtRcp = platform4_35
   val swtVersion = "3.129.0.v20250221-1734"
   val slickVersion = "3.4.1"
 
@@ -74,7 +73,6 @@ trait Deps {
   }
 
   object pekko extends Pekko
-  val ant = platform452("org.apache.ant", "1.9.6.v201510161327")
   val antlr = mvn"antlr:antlr:2.7.7"
   val antContrib = mvn"ant-contrib:ant-contrib:1.0b3"
   val aopalliance = mvn"aopalliance:aopalliance:1.0"
@@ -162,32 +160,8 @@ trait Deps {
   val dynatestApi = mvn"com.github.mvysny.dynatest:dynatest-api:0.25"
   val dynatestEngine = mvn"com.github.mvysny.dynatest:dynatest-engine:0.25"
 
-  trait Eclipse {
-    val swt = swtRcp.copy(source = false)("org.eclipse.swt", swtVersion)
-    //    val swt = swtRcp.copy(source = false)("org.eclipse.swt", "3.102.1.v20140206-1334")
-    val swtCocoa64 = swtRcp("org.eclipse.swt.cocoa.macosx.x86_64", swtVersion)
-    //    val swtLinux32 = swtRcp("org.eclipse.swt.gtk.linux.x86", swtVersion)
-    val swtLinux64 = swtRcp("org.eclipse.swt.gtk.linux.x86_64", swtVersion)
-    //    val swtWin32 = swtRcp("org.eclipse.swt.win32.win32.x86", swtVersion)
-    val swtWin64 = swtRcp("org.eclipse.swt.win32.win32.x86_64", swtVersion)
-
-    /** The swt platform matching the current machine. */
-    val swt_platform: Dep = swt_platform(System.getProperty("os.name"), System.getProperty("os.arch"))
-    def swt_platform(os: String, arch: String) = (os, arch) match {
-      case ("Mac OS X", _) => swtCocoa64
-      case ("Linux", "amd64") => swtLinux64
-      //      case ("Linux", "x86")                    => swtLinux32
-      case ("Windows" | "Windows 10", "amd64") => swtWin64
-      //      case ("Windows" | "Windows 10", "x86")   => swtWin32
-      case (os, arch) =>
-        val msg = s"Unsupported platform: ${os} / ${arch}"
-        sys.error(msg)
-        throw new IllegalStateException(msg)
-    }
-  }
 
   val easymock = mvn"org.easymock:easymock:5.4.0"
-  object eclipse extends Eclipse
   // ehcache needs JAXB 2, while we also require JAXB 3 on the classpath.
   // although both JAXB verions can be simultaniously on the classpath,
   // their Maven artifacts can not, as they have the same GAVs.
@@ -365,7 +339,6 @@ trait Deps {
   val jsr305 = mvn"com.google.code.findbugs:jsr305:3.0.2"
   lazy val julToSlf4j = mvn"org.slf4j:jul-to-slf4j:${slf4jVersion}"
   val junit3 = mvn"junit:junit:3.8.1"
-  val junit4Osgi = eclipseTestingArchive("org.junit", "4.12.0.v201504281640")
   val junit4 = mvn"junit:junit:4.13.2"
   val junitJupiter = mvn"org.junit.jupiter:junit-jupiter:5.14.3"
   val junitPlatformReporting = mvn"org.junit.platform:junit-platform-reporting:1.14.3"
@@ -526,7 +499,7 @@ trait Deps {
   val log4jToSlf4j = mvn"org.apache.logging.log4j:log4j-to-slf4j:${log4j2Version}"
 
   // local thirdparty
-  val log4jdbc = mvn"net.sf.log4jdbc:log4jdbc-jdbc4:1.2-7fce18c"
+//  val log4jdbc = mvn"net.sf.log4jdbc:log4jdbc-jdbc4:1.2-7fce18c"
 
   trait Mail {
     val jakartaMailVersion = "2.0.2"
@@ -651,53 +624,6 @@ trait Deps {
     def starterOauth2Client = mvn"org.springframework.boot:spring-boot-starter-oauth2-client:${springBootVersion}"
   }
 
-  trait SwtBot230 {
-    // from "http://ftp.fau.de/eclipse/technology/swtbot/releases/2.3.0/repository.zip"
-    //    val swtbot230Archive = thirdpartyGroup
-    val swtBotVersion = "2.3.0.201506081302"
-    val swtbotAntJunit = swtbot230Archive("org.eclipse.swtbot.ant.junit", swtBotVersion)
-    val swtbotE4Finder = swtbot230Archive("org.eclipse.swtbot.e4.finder", swtBotVersion)
-    val swtbotEclipseCore = swtbot230Archive("org.eclipse.swtbot.eclipse.core", swtBotVersion)
-    val swtbotEclipseFinder = swtbot230Archive("org.eclipse.swtbot.eclipse.finder", swtBotVersion)
-    val swtbotEclipseGefFinder = swtbot230Archive("org.eclipse.swtbot.eclipse.gef.finder", swtBotVersion)
-    val swtbotEclipseJunitHeadless = swtbot230Archive("org.eclipse.swtbot.eclipse.junit.headless", swtBotVersion)
-    val swtbotEclipseSpy = swtbot230Archive("org.eclipse.swtbot.eclipse.spy", swtBotVersion)
-    val swtbotEclipseUi = swtbot230Archive("org.eclipse.swtbot.eclipse.ui", swtBotVersion)
-    val swtbotFormsFinder = swtbot230Archive("org.eclipse.swtbot.forms.finder", swtBotVersion)
-    val swtbotGeneratorJdt = swtbot230Archive("org.eclipse.swtbot.generator.jdt", swtBotVersion)
-    val swtbotGeneratorRulesWorkbench = swtbot230Archive("org.eclipse.swtbot.generator.rules.workbench", swtBotVersion)
-    val swtbotGeneratorUi = swtbot230Archive("org.eclipse.swtbot.generator.ui", swtBotVersion)
-    val swtbotGenerator = swtbot230Archive("org.eclipse.swtbot.generator", swtBotVersion)
-    val swtbotGo = swtbot230Archive("org.eclipse.swtbot.go", swtBotVersion)
-    val swtbotJunit4x = swtbot230Archive("org.eclipse.swtbot.junit4_x", swtBotVersion)
-    val swtbotNebulaGalleryFinder = swtbot230Archive("org.eclipse.swtbot.nebula.gallery.finder", swtBotVersion)
-    val swtbotSwtFinder = swtbot230Archive("org.eclipse.swtbot.swt.finder", swtBotVersion)
-    val hamcrestCore = swtbot230Archive("org.hamcrest.core", "1.3.0.v201303031735")
-    val hamchrestLibrary = swtbot230Archive("org.hamcrest.library", "1.3.0.v201305281000")
-
-    val swtbotDeps = Seq[Dep](
-      swtbotAntJunit,
-      swtbotE4Finder,
-      swtbotEclipseCore,
-      swtbotEclipseFinder,
-      swtbotEclipseGefFinder,
-      swtbotEclipseJunitHeadless,
-      swtbotEclipseSpy,
-      swtbotEclipseUi,
-      swtbotFormsFinder,
-      swtbotGeneratorJdt,
-      swtbotGeneratorRulesWorkbench,
-      swtbotGeneratorUi,
-      swtbotGenerator,
-      swtbotGo,
-      swtbotJunit4x,
-      swtbotNebulaGalleryFinder,
-      swtbotSwtFinder,
-      hamcrestCore,
-      hamchrestLibrary
-    )
-  }
-
   val saxon8 = mvn"net.sf.saxon:saxon:8.7"
   val saxon8Dom = mvn"net.sf.saxon:saxon-dom:8.7"
   val saxon9 = mvn"org.apache.servicemix.bundles:org.apache.servicemix.bundles.saxon:9.9.1-6_1"
@@ -731,9 +657,6 @@ trait Deps {
   val sttpClientAsyncHttpClientBackend =
     mvn"com.softwaremill.sttp.client::async-http-client-backend-future::${sttpClient.version}"
   val sttpClientHttpClientBackend = mvn"com.softwaremill.sttp.client::httpclient-backend:${sttpClient.version}"
-//  val supercsv = mvn"net.sf.supercsv:super-csv:1.9.9"
-//  val swaggerCodegenV3 = mvn"io.swagger.codegen.v3:swagger-codegen:3.0.31"
-  object swtbot extends SwtBot230
 
   val testng = mvn"org.testng:testng:7.12.0"
   val tikaCore = mvn"org.apache.tika:tika-core:3.3.2"
@@ -866,7 +789,6 @@ trait Deps {
   /** Force initialization of all relevant dependencies value to make thirdparty.rcp installation/deployment work. */
   def init(): Unit
 
-  object EclipseBundles extends acmebuild.eclipse.EclipseBundles
 }
 object Deps extends Deps {
 
@@ -877,12 +799,9 @@ object Deps extends Deps {
   /** Force initialization of all relevant dependencies value to make thirdparty.rcp installation/deployment work. */
   //noinspection ScalaUnusedExpression
   override def init(): Unit = {
-    swtbot
     spring
     vaadin
-    eclipse
     //    Deps.eclipse.e4
     //    Deps.eclipse.deps
-    EclipseBundles
   }
 }

@@ -1,7 +1,6 @@
 package build.module
 
 import acmebuild.*
-import acmebuild.eclipse.{EclipseBundles => ED}
 import mill.{Module, T, Task}
 import mill.api.PathRef
 import mill.api.Module
@@ -29,8 +28,6 @@ object `package` extends Module { module =>
       framework.osgi
     )
     override def mvnDeps = super.mvnDeps() ++ DepSeq(
-      ED.`org.eclipse.core.runtime`,
-      ED.`org.eclipse.equinox.common`,
       Deps.jakartaPersistenceApi,
       Deps.dominoJava,
       Deps.nvI18nCountryCodes,
@@ -57,7 +54,6 @@ object `package` extends Module { module =>
       Deps.hibernate._all() ++
       Deps._ehcache()
     override def compileMvnDeps: T[Seq[Dep]] = super.compileMvnDeps() ++ DepSeq(
-      ED.`org.eclipse.osgi`,
       // used by budgetvariance
       Deps.immutables
     )
@@ -103,7 +99,6 @@ object `package` extends Module { module =>
         Deps.jakartaTransactionApi,
         Deps.jclOverSlf4j,
         Deps.commonsPool,
-        ED.`org.eclipse.osgi`,
         Deps.assertJ,
         Deps.assertJGuava,
         Deps.assertJJodaTime

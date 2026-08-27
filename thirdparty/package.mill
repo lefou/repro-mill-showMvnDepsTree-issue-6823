@@ -196,48 +196,6 @@ object po4j extends JavaModule with PublishModule with ThirdpartyWrapper with Pr
   )
 }
 
-
-// Local publish a specific commit from an external project
-object log4jdbc extends JavaModule with PublishModule with ThirdpartyWrapper with ProvisionModule {
-  import mill.scalalib.publish.{PomSettings, License, VersionControl}
-
-  val log4jdbcVersion = "1.2-7fce18c"
-  def repoCommit: T[String] = Task { "7fce18c56e66a9eff6a840dda984666365dbeb80" }
-
-  def repoCheckout: T[PathRef] = Task(persistent = true) {
-    val repo = Task.dest / "repo"
-    if (!os.exists(repo / "README.md")) {
-      os.call(
-        cmd = ("git", "clone", "https://github.com/arthurblake/log4jdbc.git", "repo"),
-        cwd = Task.dest
-      )
-    }
-    os.call(cmd = ("git", "checkout", repoCommit()), cwd = repo)
-    PathRef(repo)
-  }
-
-  override def javacOptions = Seq("-source", "8", "-target", "8", "-Xlint")
-  // doclinit produces errors, which stops the jar build
-  override def javadocOptions: T[Seq[String]] = Seq("-Xdoclint:none")
-  override def publishVersion: T[String] = log4jdbcVersion
-  override def artifactName: Task.Simple[String] = "log4jdbc-jdbc4"
-
-//  override def sources: T[Seq[PathRef]] = Task { Seq(PathRef(repoCheckout().path / "src-jdbc4")) }
-  override def mvnDeps: T[Seq[Dep]] = Seq(Deps.slf4j)
-
-  override def pomSettings: T[PomSettings] = Task {
-    PomSettings(
-      description = "Mill build version of log4jdbc, a JDBC proxy driver that logs all SQL without a performance hit.",
-      organization = "net.sf.log4jdbc",
-      url = "https://github.com/arthurblake/log4jdbc/tree/master",
-      licenses = Seq(License.`Apache-2.0`),
-      versionControl =
-        VersionControl.github(owner = "arthurblake", repo = "log4jdbc"),
-      developers = Seq()
-    )
-  }
-}
-
 /**
  * Wrap Javax/Jakarta XML Bind API version 2 (API + Impl) as JAR.
  *

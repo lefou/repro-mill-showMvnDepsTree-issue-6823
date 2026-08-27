@@ -1,7 +1,6 @@
 package build.framework
 
 import acmebuild.*
-import acmebuild.eclipse.{EclipseBundles => ED}
 import de.tobiasroeser.mill.osgi.OsgiHeaders
 import mill.{Module, T, Task}
 import mill.api.PathRef
@@ -20,9 +19,6 @@ object `package` extends Module { framework =>
         Deps.cmdOption
       )
       override def compileMvnDeps = super.compileMvnDeps() ++ Seq(
-        ED.`org.eclipse.osgi`,
-        ED.`org.eclipse.core.runtime`,
-        ED.`org.eclipse.equinox.common`
       )
       override def runMvnDeps = super.runMvnDeps() ++ DepSeq(
         Deps.logbackClassic
@@ -280,8 +276,6 @@ object `package` extends Module { framework =>
       framework.domainmodelApi
     )
     override def mvnDeps = super.mvnDeps() ++ DepSeq(
-      ED.`org.eclipse.core.runtime`,
-      ED.`org.eclipse.equinox.common`
     )
     override def osgiHeaders = super.osgiHeaders().copy(
       `Export-Package` = Seq(
@@ -362,26 +356,15 @@ object `package` extends Module { framework =>
       framework.uiBinding
     )
     override def compileMvnDeps = super.compileMvnDeps() ++ DepSeq(
-      Deps.eclipse.swt_platform
+//      Deps.eclipse.swt_platform
     )
     override def mvnDeps = super.mvnDeps() ++ DepSeq(
       Deps.dominoJava,
-      ED.`org.eclipse.osgi`,
-      ED.`org.eclipse.equinox.common`,
       Deps.guava_noJsr305,
       Deps.slf4j,
-      ED.`org.eclipse.swt`,
-      ED.`org.eclipse.ui`,
-      ED.`org.eclipse.ui.forms`,
-      ED.`org.eclipse.ui.workbench`,
-      ED.`org.eclipse.jface`,
       Deps.jakartaPersistenceApi,
       Deps.jodatime,
       Deps.tototecUtilsFunctional,
-      ED.`org.eclipse.core.commands`,
-      ED.`org.eclipse.core.runtime`,
-      ED.`org.eclipse.equinox.registry`,
-      ED.`org.eclipse.equinox.preferences`
     )
     object test extends SwtTests with TestNg
   }
@@ -396,16 +379,9 @@ object `package` extends Module { framework =>
     override def mvnDeps = super.mvnDeps() ++ DepSeq(
       Deps.slf4j,
       Deps.spring.core,
-      // eclipse
-      ED.`org.eclipse.swt`,
-      ED.`org.eclipse.core.commands`,
-      ED.`org.eclipse.jface`,
-      ED.`org.eclipse.ui.forms`,
-      ED.`org.eclipse.core.runtime`,
-      ED.`org.eclipse.equinox.common`
     )
     override def compileMvnDeps = super.mvnDeps() ++ DepSeq(
-      Deps.eclipse.swt_platform
+//      Deps.eclipse.swt_platform
     )
     object test extends SwtTests with TestNg
   }
@@ -422,7 +398,7 @@ object `package` extends Module { framework =>
       Deps.tototecUtilsFunctional
     )
     override def compileMvnDeps = super.compileMvnDeps() ++ DepSeq(
-      Deps.eclipse.swt_platform
+//      Deps.eclipse.swt_platform
     )
   }
 
