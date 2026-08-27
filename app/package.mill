@@ -82,7 +82,6 @@ object `package` extends Module { app =>
     override def mvnDeps = Task {
       super.mvnDeps() ++ DepSeq(
         Deps.slf4j,
-        thirdparty.po4j.asDep()
       )
     }
   }
@@ -100,7 +99,6 @@ object `package` extends Module { app =>
     )
     override def compileMvnDeps = DepSeq(
       Deps.slf4j,
-      thirdparty.po4j.asDep()
     )
     override def osgiHeaders: T[OsgiHeaders] = Task {
       super

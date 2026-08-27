@@ -132,7 +132,7 @@ object `package` extends Module { module =>
         Deps.testContainersScalaTest,
         Deps.commonsDbcp2,
         Deps.assertJDb,
-        thirdparty.mssqljdbc.asDep()
+        Deps.mssqlJdbc_orig,
       )
     }
   }

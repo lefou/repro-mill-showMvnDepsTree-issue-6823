@@ -179,7 +179,7 @@ trait Deps {
   lazy val _ehcache = Task.Anon {
     Seq(
       ehcache.exclude("org.glassfish.jaxb" -> "jaxb-runtime"),
-      thirdparty.jakartaXmlBind2.asDep()
+//      thirdparty.jakartaXmlBind2.asDep()
     )
   }
   val equinoxGogoAdapter = mvn"org.knowhowlab.osgi.experiments.gogo:equinox-gogo-adapter:1.0.0"
@@ -242,7 +242,7 @@ trait Deps {
         this.jcache,
         this.jakartaPersistenceApi,
         // we package this ourselves
-        thirdparty.jakartaXmlBind2.asDep(),
+//        thirdparty.jakartaXmlBind2.asDep(),
 //      javaxXmlBindApi,
 //      javaxXmlBindImpl,
         jakartaXmlBindApi,
@@ -604,7 +604,7 @@ trait Deps {
     def orm = spring("orm")
     def instrument = spring("instrument")
     def webmvc = spring("webmvc")
-    def web: Task[Dep] = Task.Anon { thirdparty.springweb.asDep() }
+    def web: Task[Dep] = Task.Anon { spring("web") }
 
     def _all = Task.Anon {
       Seq(core, jdbc, tx, aop, beans, context, expression, orm, instrument)

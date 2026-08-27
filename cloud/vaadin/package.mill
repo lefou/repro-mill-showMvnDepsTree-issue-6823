@@ -141,7 +141,7 @@ object `package` extends Module,
     Deps.protobufJava,
     Deps.commonsDbcp,
     Deps.jakartaTransactionApi,
-    thirdparty.mssqljdbc.asDep(),
+    Deps.mssqlJdbc_orig,
     Deps.spring.expression,
     Deps.asm9,
     Deps.asm9Commons,
@@ -183,7 +183,7 @@ object `package` extends Module,
       Deps.testContainers,
       Deps.testContainersJunit5,
       Deps.testContainersMsSqlServer,
-      thirdparty.mssqljdbc.asDep()
+      Deps.mssqlJdbc_orig,
     )
 
     // fix compile issue due to multi-trait inheritance
@@ -224,7 +224,7 @@ object `package` extends Module,
       Deps.striktJackson,
       Deps.slf4j,
       Deps.logbackClassic,
-      thirdparty.mssqljdbc.asDep(),
+      Deps.mssqlJdbc_orig,
       Deps.kotlin.coroutinesTest,
       Deps.kotlin.coroutinesJdk8,
       Deps.ktor.allHttpClientDeps
